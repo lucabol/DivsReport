@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 from pathlib import Path
 import os
 from datetime import datetime
@@ -222,19 +223,49 @@ def create_yield_safety_scatter(df):
     if "Yield" not in df.columns or "Div Safety" not in df.columns:
         return None
         
-    fig = px.scatter(
-        df,
-        x="Div Safety",
-        y="Yield",
-        color="Moat",
-        hover_data=["Ticker", "Name", "Payout", "Sector"],
+    fig = go.Figure()
+    
+    # Create a trace for each moat category
+    for moat in sorted(df['Moat'].unique()):
+        mask = df['Moat'] == moat
+        df_moat = df[mask]
+        
+        # Add small random jitter to positions to reduce overlap
+        jitter_x = np.random.normal(0, 0.1, len(df_moat))
+        jitter_y = np.random.normal(0, 0.1, len(df_moat))
+        
+        fig.add_trace(go.Scatter(
+            x=df_moat["Div Safety"] + jitter_x,
+            y=df_moat["Yield"] + jitter_y,
+            mode='text',
+            text="<b>" + df_moat["Ticker"] + "</b>",
+            textfont=dict(
+                size=10,
+                color='#0066cc' if moat == 'Wide' else ('#99ccff' if moat == 'Narrow' else '#e6e6e6')
+            ),
+            name=moat if moat != '' else 'Unknown',
+            hovertemplate=(
+                "<b>%{text}</b><br>" +
+                "Safety Score: %{x:.2f}<br>" +
+                "Yield: %{y:.2f}%<br>" +
+                f"Moat: {moat}<br>" +
+                "Name: %{customdata[0]}<br>" +
+                "Payout: %{customdata[1]}<br>" +
+                "Sector: %{customdata[2]}<br>" +
+                "<extra></extra>"
+            ),
+            customdata=df_moat[['Name', 'Payout', 'Sector']].values
+        ))
+    
+    fig.update_layout(
         title="Yield vs Safety",
-        labels={
-            "Div Safety": "Safety Score",
-            "Yield": "Yield (%)",
-            "Moat": "Economic Moat"
-        }
+        xaxis_title="Safety Score",
+        yaxis_title="Yield (%)",
+        showlegend=True,
+        legend_title="Economic Moat",
+        height=700  # Increase height to reduce vertical overlap
     )
+    
     return fig
 
 def create_yield_pfv_scatter(df):
@@ -242,18 +273,48 @@ def create_yield_pfv_scatter(df):
     if "Yield" not in df.columns or "P/FV" not in df.columns:
         return None
         
-    fig = px.scatter(
-        df,
-        x="P/FV",
-        y="Yield",
-        color="Moat",
-        hover_data=["Ticker", "Name", "Val", "Sector"],
+    fig = go.Figure()
+    
+    # Create a trace for each moat category
+    for moat in sorted(df['Moat'].unique()):
+        mask = df['Moat'] == moat
+        df_moat = df[mask]
+        
+        # Add small random jitter to positions to reduce overlap
+        jitter_x = np.random.normal(0, 0.02, len(df_moat))
+        jitter_y = np.random.normal(0, 0.1, len(df_moat))
+        
+        fig.add_trace(go.Scatter(
+            x=df_moat["P/FV"] + jitter_x,
+            y=df_moat["Yield"] + jitter_y,
+            mode='text',
+            text="<b>" + df_moat["Ticker"] + "</b>",
+            textfont=dict(
+                size=10,
+                color='#0066cc' if moat == 'Wide' else ('#99ccff' if moat == 'Narrow' else '#e6e6e6'),
+                family='Arial bold'
+            ),
+            name=moat if moat != '' else 'Unknown',
+            hovertemplate=(
+                "<b>%{text}</b><br>" +
+                "Price/Fair Value: %{x:.2f}<br>" +
+                "Yield: %{y:.2f}%<br>" +
+                f"Moat: {moat}<br>" +
+                "Name: %{customdata[0]}<br>" +
+                "Valuation: %{customdata[1]}<br>" +
+                "Sector: %{customdata[2]}<br>" +
+                "<extra></extra>"
+            ),
+            customdata=df_moat[['Name', 'Val', 'Sector']].values
+        ))
+    
+    fig.update_layout(
         title="Yield vs Price/Fair Value",
-        labels={
-            "P/FV": "Price/Fair Value",
-            "Yield": "Yield (%)",
-            "Moat": "Economic Moat"
-        }
+        xaxis_title="Price/Fair Value",
+        yaxis_title="Yield (%)",
+        showlegend=True,
+        legend_title="Economic Moat",
+        height=700  # Increase height to reduce vertical overlap
     )
     return fig
 
