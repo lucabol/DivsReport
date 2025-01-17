@@ -83,9 +83,25 @@ def load_data():
         df_xlsx = df_xlsx.rename(columns=column_renames)
         df_csv = df_csv.rename(columns=column_renames)
         
+        # Convert numeric columns in Excel file
+        numeric_columns = [
+            'P/E', 'Div Safety', 'Mkt Cap (M)',
+            'Beta', 'Payout', 'Debt/Cap', 'Debt/EBITDA',
+            'Div Growth', '5Y Div Growth', '20Y Div Growth',
+            'Div Streak', 'Unint Div Streak', 'Fwd Yld', 'Trail Yld',
+            'Interest Coverage'
+        ]
+        
+        for col in numeric_columns:
+            if col in df_xlsx.columns:
+                df_xlsx[col] = pd.to_numeric(df_xlsx[col], errors='coerce')
+                if col != 'Div Streak' and col != 'Unint Div Streak':  # Don't round streak values
+                    df_xlsx[col] = df_xlsx[col].round(2)
+        
         # Convert Market Cap to millions if needed (assuming it's in full numbers)
         if 'Mkt Cap (M)' in df_xlsx.columns:
             df_xlsx['Mkt Cap (M)'] = df_xlsx['Mkt Cap (M)'].astype(float) / 1_000_000
+            df_xlsx['Mkt Cap (M)'] = df_xlsx['Mkt Cap (M)'].round(2)
         
         # Standardize sector names in both dataframes before merging
         sector_mapping = {
@@ -177,9 +193,14 @@ def load_data():
             if col in df_merged.columns:
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
-        # Round Yield to two decimal places
-        if 'Yield' in df_merged.columns:
-            df_merged['Yield'] = df_merged['Yield'].round(2)
+        # Round numeric fields to two decimal places
+        numeric_fields_to_round = ['Yield', 'P/E', 'Div Safety', 'Beta', 'Payout', 
+                                 'Debt/Cap', 'Debt/EBITDA', 'Div Growth', 
+                                 '5Y Div Growth', '20Y Div Growth', 'Interest Coverage']
+        
+        for col in numeric_fields_to_round:
+            if col in df_merged.columns:
+                df_merged[col] = df_merged[col].round(2)
         
         # Standardize sector names again in case any were missed
         if 'Sector' in df_merged.columns:
@@ -205,12 +226,33 @@ def create_yield_safety_scatter(df):
         df,
         x="Div Safety",
         y="Yield",
-        color="Sector",
-        hover_data=["Ticker", "Name", "Payout"],
+        color="Moat",
+        hover_data=["Ticker", "Name", "Payout", "Sector"],
         title="Yield vs Safety",
         labels={
             "Div Safety": "Safety Score",
-            "Yield": "Yield (%)"
+            "Yield": "Yield (%)",
+            "Moat": "Economic Moat"
+        }
+    )
+    return fig
+
+def create_yield_pfv_scatter(df):
+    """Create scatter plot of Yield vs Price/Fair Value."""
+    if "Yield" not in df.columns or "P/FV" not in df.columns:
+        return None
+        
+    fig = px.scatter(
+        df,
+        x="P/FV",
+        y="Yield",
+        color="Moat",
+        hover_data=["Ticker", "Name", "Val", "Sector"],
+        title="Yield vs Price/Fair Value",
+        labels={
+            "P/FV": "Price/Fair Value",
+            "Yield": "Yield (%)",
+            "Moat": "Economic Moat"
         }
     )
     return fig
@@ -340,7 +382,7 @@ def main():
     # Display charts in tabs
     st.header("Analysis Charts")
     
-    tab1, tab2 = st.tabs(["Yield vs Safety", "Top Yields"])
+    tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields"])
     
     with tab1:
         yield_safety_fig = create_yield_safety_scatter(df)
@@ -350,6 +392,13 @@ def main():
             st.warning("Missing required columns for Yield vs Safety chart")
     
     with tab2:
+        yield_pfv_fig = create_yield_pfv_scatter(df)
+        if yield_pfv_fig:
+            st.plotly_chart(yield_pfv_fig, use_container_width=True)
+        else:
+            st.warning("Missing required columns for Yield vs Price/Fair Value chart")
+    
+    with tab3:
         top_yield_fig = create_top_yield_bar(df)
         if top_yield_fig:
             st.plotly_chart(top_yield_fig, use_container_width=True)
