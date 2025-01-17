@@ -89,10 +89,11 @@ def load_data():
         
         # Standardize sector names in both dataframes before merging
         sector_mapping = {
-            'Consumer Defensive': 'Consumer Stable',
+            'Consumer Defensive': 'Consumer Staples',
             'Consumer Cyclical': 'Consumer Discretionary',
             'Communication Services': 'Communications',
-            'Basic Materials': 'Materials'
+            'Basic Materials': 'Materials',
+            'Financial Services': 'Financials'
         }
         
         if 'Sector' in df_xlsx.columns:
