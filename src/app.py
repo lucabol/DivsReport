@@ -14,6 +14,41 @@ def get_latest_file(directory: Path, pattern: str) -> Path:
         return None
     return max(files, key=os.path.getmtime)
 
+def get_value_transformations():
+    """Define value transformations for various fields."""
+    return {
+        'Moat': {
+            'Wide': 'Wid',
+            'Narrow': 'Nar',
+            '': ''
+        },
+        'Rec Div': {
+            'Increased': 'Inc',
+            'Maintained': 'Mnt',
+            'Cut': 'Cut',
+            '': ''
+        },
+        'Val': {
+            'May be undervalued': 'Und',
+            'Looks reasonably valued': 'Rea',
+            'Could be overvalued': 'Ovr',
+            '': ''
+        }
+    }
+
+def apply_value_transformations(df):
+    """Apply value transformations to specified columns."""
+    transformations = get_value_transformations()
+    
+    for col, mapping in transformations.items():
+        if col in df.columns:
+            # Fill NaN with empty string first
+            df[col] = df[col].fillna('')
+            # Apply transformation
+            df[col] = df[col].map(lambda x: mapping.get(x, mapping.get('', '')))
+    
+    return df
+
 def load_data():
     """Load and merge data from the latest xlsx and csv files."""
     downloads_dir = Path.home() / "Downloads"
@@ -213,6 +248,9 @@ def load_data():
             if col in df_merged.columns:
                 df_merged[col] = df_merged[col].fillna('')
         
+        # Apply value transformations
+        df_merged = apply_value_transformations(df_merged)
+        
         return df_merged, None
         
     except Exception as e:
@@ -241,7 +279,7 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
             text="<b>" + df_moat["Ticker"] + "</b>",
             textfont=dict(
                 size=10,
-                color='#0066cc' if moat == 'Wide' else ('#99ccff' if moat == 'Narrow' else '#e6e6e6')
+                color='#0066cc' if moat == 'Wid' else ('#99ccff' if moat == 'Nar' else '#e6e6e6')
             ),
             name=moat if moat != '' else 'Unknown',
             hovertemplate=(
@@ -362,21 +400,24 @@ def main():
     
     # Sector filter
     if "Sector" in df.columns:
-        sector_options = ["All"] + sorted([x for x in df["Sector"].unique() if x not in ["", "Unknown"]])
+        sector_options = ["All"] + sorted([x for x in df["Sector"].unique() if x != ""])
         selected_sector = st.sidebar.selectbox("Sector", sector_options)
         if selected_sector != "All":
             df = df[df["Sector"] == selected_sector]
     
     # Moat Rating filter
     if "Moat" in df.columns:
-        moat_options = ["All"] + sorted([x for x in df["Moat"].unique() if x not in ["", "Unknown"]])
+        moat_options = ["All"] + sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
         selected_moat = st.sidebar.selectbox("Moat", moat_options)
         if selected_moat != "All":
-            df = df[df["Moat"] == selected_moat]
+            if selected_moat == "Unknown":
+                df = df[df["Moat"] == ""]
+            else:
+                df = df[df["Moat"] == selected_moat]
     
     # Dividend Taxation filter
     if "Div Tax" in df.columns:
-        taxation_options = ["All"] + sorted([x for x in df["Div Tax"].unique() if x not in ["", "Unknown"]])
+        taxation_options = ["All"] + sorted([x for x in df["Div Tax"].unique() if x != ""])
         selected_taxation = st.sidebar.selectbox("Div Tax", taxation_options)
         if selected_taxation != "All":
             df = df[df["Div Tax"] == selected_taxation]
