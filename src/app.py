@@ -218,9 +218,9 @@ def load_data():
     except Exception as e:
         return None, str(e)
 
-def create_yield_safety_scatter(df):
-    """Create scatter plot of Yield vs Safety."""
-    if "Yield" not in df.columns or "Div Safety" not in df.columns:
+def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label, hover_value_col, hover_value_label):
+    """Create a scatter plot with moat-based coloring and styling."""
+    if "Yield" not in df.columns or x_col not in df.columns:
         return None
         
     fig = go.Figure()
@@ -231,11 +231,11 @@ def create_yield_safety_scatter(df):
         df_moat = df[mask]
         
         # Add small random jitter to positions to reduce overlap
-        jitter_x = np.random.normal(0, 0.1, len(df_moat))
+        jitter_x = np.random.normal(0, jitter_x_scale, len(df_moat))
         jitter_y = np.random.normal(0, 0.1, len(df_moat))
         
         fig.add_trace(go.Scatter(
-            x=df_moat["Div Safety"] + jitter_x,
+            x=df_moat[x_col] + jitter_x,
             y=df_moat["Yield"] + jitter_y,
             mode='text',
             text="<b>" + df_moat["Ticker"] + "</b>",
@@ -246,20 +246,20 @@ def create_yield_safety_scatter(df):
             name=moat if moat != '' else 'Unknown',
             hovertemplate=(
                 "<b>%{text}</b><br>" +
-                "Safety Score: %{x:.2f}<br>" +
+                f"{hover_x_label}: %{{x:.2f}}<br>" +
                 "Yield: %{y:.2f}%<br>" +
                 f"Moat: {moat}<br>" +
                 "Name: %{customdata[0]}<br>" +
-                "Payout: %{customdata[1]}<br>" +
+                f"{hover_value_label}: %{{customdata[1]}}<br>" +
                 "Sector: %{customdata[2]}<br>" +
                 "<extra></extra>"
             ),
-            customdata=df_moat[['Name', 'Payout', 'Sector']].values
+            customdata=df_moat[['Name', hover_value_col, 'Sector']].values
         ))
     
     fig.update_layout(
-        title="Yield vs Safety",
-        xaxis_title="Safety Score",
+        title=title,
+        xaxis_title=x_title,
         yaxis_title="Yield (%)",
         showlegend=True,
         legend_title="Economic Moat",
@@ -268,55 +268,31 @@ def create_yield_safety_scatter(df):
     
     return fig
 
+def create_yield_safety_scatter(df):
+    """Create scatter plot of Yield vs Safety."""
+    return create_moat_scatter(
+        df=df,
+        x_col="Div Safety",
+        x_title="Safety Score",
+        title="Yield vs Safety",
+        jitter_x_scale=0.1,
+        hover_x_label="Safety Score",
+        hover_value_col="Payout",
+        hover_value_label="Payout"
+    )
+
 def create_yield_pfv_scatter(df):
     """Create scatter plot of Yield vs Price/Fair Value."""
-    if "Yield" not in df.columns or "P/FV" not in df.columns:
-        return None
-        
-    fig = go.Figure()
-    
-    # Create a trace for each moat category
-    for moat in sorted(df['Moat'].unique()):
-        mask = df['Moat'] == moat
-        df_moat = df[mask]
-        
-        # Add small random jitter to positions to reduce overlap
-        jitter_x = np.random.normal(0, 0.02, len(df_moat))
-        jitter_y = np.random.normal(0, 0.1, len(df_moat))
-        
-        fig.add_trace(go.Scatter(
-            x=df_moat["P/FV"] + jitter_x,
-            y=df_moat["Yield"] + jitter_y,
-            mode='text',
-            text="<b>" + df_moat["Ticker"] + "</b>",
-            textfont=dict(
-                size=10,
-                color='#0066cc' if moat == 'Wide' else ('#99ccff' if moat == 'Narrow' else '#e6e6e6'),
-                family='Arial bold'
-            ),
-            name=moat if moat != '' else 'Unknown',
-            hovertemplate=(
-                "<b>%{text}</b><br>" +
-                "Price/Fair Value: %{x:.2f}<br>" +
-                "Yield: %{y:.2f}%<br>" +
-                f"Moat: {moat}<br>" +
-                "Name: %{customdata[0]}<br>" +
-                "Valuation: %{customdata[1]}<br>" +
-                "Sector: %{customdata[2]}<br>" +
-                "<extra></extra>"
-            ),
-            customdata=df_moat[['Name', 'Val', 'Sector']].values
-        ))
-    
-    fig.update_layout(
+    return create_moat_scatter(
+        df=df,
+        x_col="P/FV",
+        x_title="Price/Fair Value",
         title="Yield vs Price/Fair Value",
-        xaxis_title="Price/Fair Value",
-        yaxis_title="Yield (%)",
-        showlegend=True,
-        legend_title="Economic Moat",
-        height=700  # Increase height to reduce vertical overlap
+        jitter_x_scale=0.02,
+        hover_x_label="Price/Fair Value",
+        hover_value_col="Val",
+        hover_value_label="Valuation"
     )
-    return fig
 
 def create_top_yield_bar(df):
     """Create bar chart of top yields."""
