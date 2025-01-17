@@ -180,25 +180,6 @@ def create_yield_safety_scatter(df):
     )
     return fig
 
-def create_yield_pe_scatter(df):
-    """Create scatter plot of Yield vs P/E Ratio."""
-    if "Yield" not in df.columns or "P/E Ratio" not in df.columns:
-        return None
-        
-    fig = px.scatter(
-        df,
-        x="P/E Ratio",
-        y="Yield",
-        color="Sector",
-        hover_data=["Ticker", "Name", "Market Cap (Millions)"],
-        title="Dividend Yield vs P/E Ratio",
-        labels={
-            "P/E Ratio": "P/E Ratio",
-            "Yield": "Dividend Yield (%)"
-        }
-    )
-    return fig
-
 def create_top_yield_bar(df):
     """Create bar chart of top 10 dividend yields."""
     if "Yield" not in df.columns:
@@ -323,7 +304,7 @@ def main():
     # Display charts in tabs
     st.header("Analysis Charts")
     
-    tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs P/E", "Top Yields"])
+    tab1, tab2 = st.tabs(["Yield vs Safety", "Top Yields"])
     
     with tab1:
         yield_safety_fig = create_yield_safety_scatter(df)
@@ -333,13 +314,6 @@ def main():
             st.warning("Missing required columns for Yield vs Safety chart")
     
     with tab2:
-        yield_pe_fig = create_yield_pe_scatter(df)
-        if yield_pe_fig:
-            st.plotly_chart(yield_pe_fig, use_container_width=True)
-        else:
-            st.warning("Missing required columns for Yield vs P/E chart")
-    
-    with tab3:
         top_yield_fig = create_top_yield_bar(df)
         if top_yield_fig:
             st.plotly_chart(top_yield_fig, use_container_width=True)
