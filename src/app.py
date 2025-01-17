@@ -22,7 +22,7 @@ def get_value_transformations():
             'Narrow': 'Nar',
             '': ''
         },
-        'Rec Div': {
+        'RecDiv': {
             'Increased': 'Inc',
             'Maintained': 'Mnt',
             'Cut': 'Cut',
@@ -78,41 +78,42 @@ def load_data():
         # Define column renames
         column_renames = {
             'Economic Moat': 'Moat',
-            'Market Cap': 'Mkt Cap (M)',
-            'Industry': 'Sub Sec',
-            'Dividend Yield (Forward)': 'Fwd Yld',
-            'Dividend Yield (Trailing)': 'Trail Yld',
-            'Dividend Safety': 'Div Safety',
-            'Price/Earnings (Forward)': 'P/E Fwd',
-            'Price/Cash Flow': 'P/CF',
-            'Sub Sector': 'Sub Sec',
-            'Market Cap (Millions)': 'Mkt Cap (M)',
-            'Expected Price': 'Exp Price',
-            '% From Expected Price': '% From Exp',
-            '5 Year Average Dividend Yield': '5Y Avg Yld',
-            '% Above 5 Year Average Dividend Yield': '% Above 5Y Avg',
-            '5 Year Average P/E Ratio': '5Y Avg P/E',
-            'Dividend Growth (Latest)': 'Div Growth',
-            '5 Year Dividend Growth': '5Y Div Growth',
-            '20 Year Dividend Growth': '20Y Div Growth',
-            'Dividend Growth Streak (Years)': 'Div Streak',
-            'Uninterrupted Dividend Streak (Years)': 'Unint Div Streak',
-            'Payment Frequency': 'Pay Freq',
-            'Payment Schedule': 'Pay Sched',
-            'Dividend Taxation': 'Div Tax',
-            'Recession Dividend': 'Rec Div',
-            'Recession Return': 'Rec Ret',
-            'Ex Dividend Date': 'Ex Div Date',
-            'Years Of Positive Free Cash Flow In Last 10': 'FCF Yrs',
+            'Market Cap': 'MktCap',
+            'Industry': 'SubSec',
+            'Dividend Yield (Forward)': 'YldFwd',
+            'Dividend Yield (Trailing)': 'YldTrl',
+            'Dividend Safety': 'DivSafe',
+            'Price/Earnings (Forward)': 'PEFwd',
+            'Price/Cash Flow': 'PCF',
+            'Sub Sector': 'SubSec',
+            'Market Cap (Millions)': 'MktCap',
+            'Expected Price': 'ExpPrc',
+            '% From Expected Price': 'FromExp',
+            '5 Year Average Dividend Yield': 'YldAvg5',
+            '% Above 5 Year Average Dividend Yield': 'Yld5Dif',
+            '5 Year Average P/E Ratio': 'PEAvg5',
+            'Dividend Growth (Latest)': 'DivGrw',
+            '5 Year Dividend Growth': 'Grw5Y',
+            '20 Year Dividend Growth': 'Grw20Y',
+            'Dividend Growth Streak (Years)': 'StrDiv',
+            'Uninterrupted Dividend Streak (Years)': 'StrUnt',
+            'Payment Frequency': 'PayFrq',
+            'Payment Schedule': 'PaySch',
+            'Dividend Taxation': 'DivTax',
+            'Recession Dividend': 'RecDiv',
+            'Recession Return': 'RecRet',
+            'Ex Dividend Date': 'ExDiv',
+            'Years Of Positive Free Cash Flow In Last 10': 'FCFYrs',
             'Payout Ratio': 'Payout',
-            'Net Debt To Capital': 'Debt/Cap',
-            'Net Debt To EBITDA': 'Debt/EBITDA',
-            'P/E Ratio': 'P/E',
-            'Capital Allocation': 'Cap Alloc',
-            'Morningstar Rating for Stocks': 'MS Rating',
-            'Fair Value Uncertainty': 'FV Uncert',
-            'Price/Fair Value': 'P/FV',
-            'Valuation': 'Val'
+            'Net Debt To Capital': 'DebtCap',
+            'Net Debt To EBITDA': 'DebtEBT',
+            'P/E Ratio': 'PE',
+            'Capital Allocation': 'CapAll',
+            'Morningstar Rating for Stocks': 'MSRate',
+            'Fair Value Uncertainty': 'FVUnc',
+            'Price/Fair Value': 'PFV',
+            'Valuation': 'Val',
+            'Interest Coverage': 'IntCov'
         }
         
         # Rename columns in both dataframes
@@ -121,23 +122,23 @@ def load_data():
         
         # Convert numeric columns in Excel file
         numeric_columns = [
-            'P/E', 'Div Safety', 'Mkt Cap (M)',
-            'Beta', 'Payout', 'Debt/Cap', 'Debt/EBITDA',
-            'Div Growth', '5Y Div Growth', '20Y Div Growth',
-            'Div Streak', 'Unint Div Streak', 'Fwd Yld', 'Trail Yld',
-            'Interest Coverage'
+            'PE', 'DivSafe', 'MktCap',
+            'Beta', 'Payout', 'DebtCap', 'DebtEBT',
+            'DivGrw', 'Grw5Y', 'Grw20Y',
+            'StrDiv', 'StrUnt', 'YldFwd', 'YldTrl',
+            'IntCov'
         ]
         
         for col in numeric_columns:
             if col in df_xlsx.columns:
                 df_xlsx[col] = pd.to_numeric(df_xlsx[col], errors='coerce')
-                if col != 'Div Streak' and col != 'Unint Div Streak':  # Don't round streak values
+                if col != 'StrDiv' and col != 'StrUnt':  # Don't round streak values
                     df_xlsx[col] = df_xlsx[col].round(2)
         
         # Convert Market Cap to millions if needed (assuming it's in full numbers)
-        if 'Mkt Cap (M)' in df_xlsx.columns:
-            df_xlsx['Mkt Cap (M)'] = df_xlsx['Mkt Cap (M)'].astype(float) / 1_000_000
-            df_xlsx['Mkt Cap (M)'] = df_xlsx['Mkt Cap (M)'].round(2)
+        if 'MktCap' in df_xlsx.columns:
+            df_xlsx['MktCap'] = df_xlsx['MktCap'].astype(float) / 1_000_000
+            df_xlsx['MktCap'] = df_xlsx['MktCap'].round(2)
         
         # Standardize sector names in both dataframes before merging
         sector_mapping = {
@@ -160,12 +161,12 @@ def load_data():
         # 1. Forward Yield from Excel
         # 2. Trailing Yield from Excel
         # 3. Dividend Yield from CSV
-        df_merged['Yield'] = df_merged['Fwd Yld']
-        df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['Trail Yld']
+        df_merged['Yield'] = df_merged['YldFwd']
+        df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['YldTrl']
         df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['Dividend Yield']
         
         # Drop other yield columns after creating the main Yield column
-        yield_columns = ['Fwd Yld', 'Trail Yld', 'Dividend Yield']
+        yield_columns = ['YldFwd', 'YldTrl', 'Dividend Yield']
         df_merged = df_merged.drop(columns=[col for col in yield_columns if col in df_merged.columns])
         
         # Handle sector columns first
@@ -191,26 +192,30 @@ def load_data():
         
         # Fill missing values with reasonable defaults
         default_values = {
-            'P/E': float('nan'),
-            'Div Safety': float('nan'),
-            'Mkt Cap (M)': float('nan'),
+            'PE': float('nan'),
+            'DivSafe': float('nan'),
+            'MktCap': float('nan'),
             'Beta': float('nan'),
             'Payout': float('nan'),
-            'Debt/Cap': float('nan'),
-            'Debt/EBITDA': float('nan'),
-            'Div Growth': float('nan'),
-            '5Y Div Growth': float('nan'),
-            '20Y Div Growth': float('nan'),
-            'Div Streak': float('nan'),
-            'Unint Div Streak': float('nan'),
+            'DebtCap': float('nan'),
+            'DebtEBT': float('nan'),
+            'DivGrw': float('nan'),
+            'Grw5Y': float('nan'),
+            'Grw20Y': float('nan'),
+            'StrDiv': float('nan'),
+            'StrUnt': float('nan'),
             'Sector': '',
-            'Sub Sec': '',
-            'Pay Sched': '',
-            'Div Tax': '',
+            'SubSec': '',
+            'PaySch': '',
+            'DivTax': '',
             'Moat': '',
-            'Cap Alloc': '',
-            'Style Box': '',
-            'MS Rating': float('nan')
+            'CapAll': '',
+            'Style': '',
+            'MSRate': float('nan'),
+            'IntCov': float('nan'),
+            'PFV': float('nan'),
+            'PEFwd': float('nan'),
+            'PCF': float('nan')
         }
         
         for col, default_val in default_values.items():
@@ -219,10 +224,11 @@ def load_data():
         
         # Convert numeric columns
         numeric_columns = [
-            'Yield', 'P/E', 'Div Safety', 'Mkt Cap (M)',
-            'Beta', 'Payout', 'Debt/Cap', 'Debt/EBITDA',
-            'Div Growth', '5Y Div Growth', '20Y Div Growth',
-            'Div Streak', 'Unint Div Streak'
+            'Yield', 'PE', 'DivSafe', 'MktCap',
+            'Beta', 'Payout', 'DebtCap', 'DebtEBT',
+            'DivGrw', 'Grw5Y', 'Grw20Y',
+            'StrDiv', 'StrUnt', 'IntCov',
+            'PFV', 'PEFwd', 'PCF'
         ]
         
         for col in numeric_columns:
@@ -230,9 +236,10 @@ def load_data():
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
         # Round numeric fields to two decimal places
-        numeric_fields_to_round = ['Yield', 'P/E', 'Div Safety', 'Beta', 'Payout', 
-                                 'Debt/Cap', 'Debt/EBITDA', 'Div Growth', 
-                                 '5Y Div Growth', '20Y Div Growth', 'Interest Coverage']
+        numeric_fields_to_round = ['Yield', 'PE', 'DivSafe', 'Beta', 'Payout', 
+                                 'DebtCap', 'DebtEBT', 'DivGrw', 
+                                 'Grw5Y', 'Grw20Y', 'IntCov',
+                                 'PFV', 'PEFwd', 'PCF']
         
         for col in numeric_fields_to_round:
             if col in df_merged.columns:
@@ -243,7 +250,7 @@ def load_data():
             df_merged['Sector'] = df_merged['Sector'].replace(sector_mapping)
         
         # Ensure categorical columns are strings
-        categorical_columns = ['Sector', 'Sub Sec', 'Pay Sched', 'Div Tax']
+        categorical_columns = ['Sector', 'SubSec', 'PaySch', 'DivTax']
         for col in categorical_columns:
             if col in df_merged.columns:
                 df_merged[col] = df_merged[col].fillna('')
@@ -289,11 +296,11 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
                 f"Moat: {moat}<br>" +
                 "Name: %{customdata[0]}<br>" +
                 f"{hover_value_label}: %{{customdata[1]}}<br>" +
-                "Div Safety: %{customdata[3]}<br>" +
+                "DivSafe: %{customdata[3]}<br>" +
                 "Sector: %{customdata[2]}<br>" +
                 "<extra></extra>"
             ),
-            customdata=df_moat[['Name', hover_value_col, 'Sector', 'Div Safety']].values
+            customdata=df_moat[['Name', hover_value_col, 'Sector', 'DivSafe']].values
         ))
     
     fig.update_layout(
@@ -311,7 +318,7 @@ def create_yield_safety_scatter(df):
     """Create scatter plot of Yield vs Safety."""
     return create_moat_scatter(
         df=df,
-        x_col="Div Safety",
+        x_col="DivSafe",
         x_title="Safety Score",
         title="Yield vs Safety",
         jitter_x_scale=0.1,
@@ -324,7 +331,7 @@ def create_yield_pfv_scatter(df):
     """Create scatter plot of Yield vs Price/Fair Value."""
     return create_moat_scatter(
         df=df,
-        x_col="P/FV",
+        x_col="PFV",
         x_title="Price/Fair Value",
         title="Yield vs Price/Fair Value",
         jitter_x_scale=0.02,
@@ -344,7 +351,7 @@ def create_top_yield_bar(df):
         x="Ticker",
         y="Yield",
         color="Sector",
-        hover_data=["Name", "Div Safety"],
+        hover_data=["Name", "DivSafe"],
         title="Top 10 by Yield",
         labels={"Yield": "Yield (%)"}
     )
@@ -384,17 +391,17 @@ def main():
         df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
     
     # Dividend Safety filter (only show if there are stocks with safety data)
-    if "Div Safety" in df.columns and df["Div Safety"].notna().any():
-        min_safety = float(df["Div Safety"].min())
-        max_safety = float(df["Div Safety"].max())
+    if "DivSafe" in df.columns and df["DivSafe"].notna().any():
+        min_safety = float(df["DivSafe"].min())
+        max_safety = float(df["DivSafe"].max())
         selected_min_safety, selected_max_safety = st.sidebar.slider(
             "Safety Score",
             min_safety, max_safety,
             (min_safety, max_safety)
         )
         # Only filter stocks that have a Safety value
-        safety_mask = df["Div Safety"].notna()
-        df = df[~safety_mask | (safety_mask & df["Div Safety"].between(selected_min_safety, selected_max_safety))]
+        safety_mask = df["DivSafe"].notna()
+        df = df[~safety_mask | (safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety))]
     
     st.sidebar.subheader("Categorical Filters")
     
@@ -416,11 +423,11 @@ def main():
                 df = df[df["Moat"] == selected_moat]
     
     # Dividend Taxation filter
-    if "Div Tax" in df.columns:
-        taxation_options = ["All"] + sorted([x for x in df["Div Tax"].unique() if x != ""])
+    if "DivTax" in df.columns:
+        taxation_options = ["All"] + sorted([x for x in df["DivTax"].unique() if x != ""])
         selected_taxation = st.sidebar.selectbox("Div Tax", taxation_options)
         if selected_taxation != "All":
-            df = df[df["Div Tax"] == selected_taxation]
+            df = df[df["DivTax"] == selected_taxation]
     
     # Display data source information
     if df is not None:
@@ -434,13 +441,13 @@ def main():
     
     # Reorder columns to show most important first
     important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
-                     'Div Safety', 
+                     'DivSafe', 
                      'Moat',
-                     'Beta', 'Rec Div',
-                     'Unint Div Streak',
-                     'Debt/EBITDA',
-                     'Interest Coverage',
-                     'MS Rating',
+                     'Beta', 'RecDiv',
+                     'StrUnt',
+                     'DebtEBT',
+                     'IntCov',
+                     'MSRate',
                      'Val'
                      ]
     cols = [col for col in important_cols if col in df.columns]
