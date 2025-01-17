@@ -151,13 +151,13 @@ def load_data():
             '20Y Div Growth': float('nan'),
             'Div Streak': float('nan'),
             'Unint Div Streak': float('nan'),
-            'Sector': 'Unknown',
-            'Sub Sec': 'Unknown',
-            'Pay Sched': 'Unknown',
-            'Div Tax': 'Unknown',
-            'Moat': 'Unknown',
-            'Cap Alloc': 'Unknown',
-            'Style Box': 'Unknown',
+            'Sector': '',
+            'Sub Sec': '',
+            'Pay Sched': '',
+            'Div Tax': '',
+            'Moat': '',
+            'Cap Alloc': '',
+            'Style Box': '',
             'MS Rating': float('nan')
         }
         
@@ -318,6 +318,7 @@ def main():
                      'Beta', 'Rec Div',
                      'Unint Div Streak',
                      'Debt/EBITDA',
+                     'Interest Coverage',
                      'MS Rating',
                      'Val'
                      ]
