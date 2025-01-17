@@ -78,15 +78,11 @@ def load_data():
         # Define column renames
         column_renames = {
             'Economic Moat': 'Moat',
-            'Market Cap': 'MktCap',
-            'Industry': 'SubSec',
             'Dividend Yield (Forward)': 'YldFwd',
             'Dividend Yield (Trailing)': 'YldTrl',
             'Dividend Safety': 'DivSafe',
             'Price/Earnings (Forward)': 'PEFwd',
             'Price/Cash Flow': 'PCF',
-            'Sub Sector': 'SubSec',
-            'Market Cap (Millions)': 'MktCap',
             'Expected Price': 'ExpPrc',
             '% From Expected Price': 'FromExp',
             '5 Year Average Dividend Yield': 'YldAvg5',
@@ -122,8 +118,8 @@ def load_data():
         
         # Convert numeric columns in Excel file
         numeric_columns = [
-            'PE', 'DivSafe', 'MktCap',
-            'Beta', 'Payout', 'DebtCap', 'DebtEBT',
+            'DivSafe',
+            'Beta', 'Payout', 'DebtEBT',
             'DivGrw', 'Grw5Y', 'Grw20Y',
             'StrDiv', 'StrUnt', 'YldFwd', 'YldTrl',
             'IntCov'
@@ -135,11 +131,7 @@ def load_data():
                 if col != 'StrDiv' and col != 'StrUnt':  # Don't round streak values
                     df_xlsx[col] = df_xlsx[col].round(2)
         
-        # Convert Market Cap to millions if needed (assuming it's in full numbers)
-        if 'MktCap' in df_xlsx.columns:
-            df_xlsx['MktCap'] = df_xlsx['MktCap'].astype(float) / 1_000_000
-            df_xlsx['MktCap'] = df_xlsx['MktCap'].round(2)
-        
+
         # Standardize sector names in both dataframes before merging
         sector_mapping = {
             'Consumer Defensive': 'Consumer Staples',
@@ -165,9 +157,19 @@ def load_data():
         df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['YldTrl']
         df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['Dividend Yield']
         
-        # Drop other yield columns after creating the main Yield column
-        yield_columns = ['YldFwd', 'YldTrl', 'Dividend Yield']
-        df_merged = df_merged.drop(columns=[col for col in yield_columns if col in df_merged.columns])
+        # Define columns to remove
+        columns_to_remove = [
+            'YldFwd', 'YldTrl', 'Dividend Yield',  # Yield columns (already handled)
+            'PEFwd', 'PCF',                        # Price ratios
+            'MktCap', 'ExpPrc', 'FromExp',         # Price and market related
+            'YldAvg5', 'Yld5Dif',                  # Yield averages
+            'PE', 'PEAvg5',                        # P/E ratios
+            'PayFrq', 'DebtCap', 'PaySch',         # Payment and debt
+            'Market Cap (Millions)', 'RecRet', 'Sub Sector', 'Industry', 'CapAll'
+        ]
+        
+        # Drop all specified columns
+        df_merged = df_merged.drop(columns=[col for col in columns_to_remove if col in df_merged.columns])
         
         # Handle sector columns first
         if 'Sector_xlsx' in df_merged.columns and 'Sector_csv' in df_merged.columns:
@@ -192,12 +194,9 @@ def load_data():
         
         # Fill missing values with reasonable defaults
         default_values = {
-            'PE': float('nan'),
             'DivSafe': float('nan'),
-            'MktCap': float('nan'),
             'Beta': float('nan'),
             'Payout': float('nan'),
-            'DebtCap': float('nan'),
             'DebtEBT': float('nan'),
             'DivGrw': float('nan'),
             'Grw5Y': float('nan'),
@@ -205,17 +204,13 @@ def load_data():
             'StrDiv': float('nan'),
             'StrUnt': float('nan'),
             'Sector': '',
-            'SubSec': '',
-            'PaySch': '',
             'DivTax': '',
             'Moat': '',
             'CapAll': '',
             'Style': '',
             'MSRate': float('nan'),
             'IntCov': float('nan'),
-            'PFV': float('nan'),
-            'PEFwd': float('nan'),
-            'PCF': float('nan')
+            'PFV': float('nan')
         }
         
         for col, default_val in default_values.items():
@@ -224,11 +219,11 @@ def load_data():
         
         # Convert numeric columns
         numeric_columns = [
-            'Yield', 'PE', 'DivSafe', 'MktCap',
-            'Beta', 'Payout', 'DebtCap', 'DebtEBT',
+            'Yield', 'DivSafe',
+            'Beta', 'Payout', 'DebtEBT',
             'DivGrw', 'Grw5Y', 'Grw20Y',
             'StrDiv', 'StrUnt', 'IntCov',
-            'PFV', 'PEFwd', 'PCF'
+            'PFV'
         ]
         
         for col in numeric_columns:
@@ -236,10 +231,10 @@ def load_data():
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
         # Round numeric fields to two decimal places
-        numeric_fields_to_round = ['Yield', 'PE', 'DivSafe', 'Beta', 'Payout', 
-                                 'DebtCap', 'DebtEBT', 'DivGrw', 
+        numeric_fields_to_round = ['Yield', 'DivSafe', 'Beta', 'Payout', 
+                                 'DebtEBT', 'DivGrw', 
                                  'Grw5Y', 'Grw20Y', 'IntCov',
-                                 'PFV', 'PEFwd', 'PCF']
+                                 'PFV']
         
         for col in numeric_fields_to_round:
             if col in df_merged.columns:
@@ -250,7 +245,7 @@ def load_data():
             df_merged['Sector'] = df_merged['Sector'].replace(sector_mapping)
         
         # Ensure categorical columns are strings
-        categorical_columns = ['Sector', 'SubSec', 'PaySch', 'DivTax']
+        categorical_columns = ['Sector', 'DivTax']
         for col in categorical_columns:
             if col in df_merged.columns:
                 df_merged[col] = df_merged[col].fillna('')
@@ -296,7 +291,7 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
                 f"Moat: {moat}<br>" +
                 "Name: %{customdata[0]}<br>" +
                 f"{hover_value_label}: %{{customdata[1]}}<br>" +
-                "DivSafe: %{customdata[3]}<br>" +
+                "Div Safety: %{customdata[3]}<br>" +
                 "Sector: %{customdata[2]}<br>" +
                 "<extra></extra>"
             ),
