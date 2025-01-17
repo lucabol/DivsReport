@@ -251,10 +251,11 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
                 f"Moat: {moat}<br>" +
                 "Name: %{customdata[0]}<br>" +
                 f"{hover_value_label}: %{{customdata[1]}}<br>" +
+                "Div Safety: %{customdata[3]}<br>" +
                 "Sector: %{customdata[2]}<br>" +
                 "<extra></extra>"
             ),
-            customdata=df_moat[['Name', hover_value_col, 'Sector']].values
+            customdata=df_moat[['Name', hover_value_col, 'Sector', 'Div Safety']].values
         ))
     
     fig.update_layout(
