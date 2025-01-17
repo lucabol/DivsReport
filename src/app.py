@@ -22,7 +22,7 @@ def load_data():
     csv_file = get_latest_file(downloads_dir, "*.csv")
     
     if not xlsx_file or not csv_file:
-        st.error("Could not find both for-divs.xlsx and ForDivs CSV files in Downloads directory")
+        st.error("Could not find both Excel and CSV files in Downloads directory")
         return None, None
     
     try:
@@ -52,12 +52,23 @@ def load_data():
         if 'Market Cap (Millions)' in df_xlsx.columns:
             df_xlsx['Market Cap (Millions)'] = df_xlsx['Market Cap (Millions)'].astype(float) / 1_000_000
         
+        # Standardize sector names in both dataframes before merging
+        sector_mapping = {
+            'Consumer Defensive': 'Consumer Stable',
+            'Consumer Cyclical': 'Consumer Discretionary',
+            'Communication Services': 'Communications',
+            'Basic Materials': 'Materials'
+        }
+        
+        if 'Sector' in df_xlsx.columns:
+            df_xlsx['Sector'] = df_xlsx['Sector'].replace(sector_mapping)
+        if 'Sector' in df_csv.columns:
+            df_csv['Sector'] = df_csv['Sector'].replace(sector_mapping)
+        
         # Merge datasets with outer join and indicator
         df_merged = pd.merge(df_xlsx, df_csv, on="Ticker", how="outer", suffixes=('_xlsx', '_csv'))
         
-        # Print all columns
-        # st.write("Available columns:", sorted(list(df_merged.columns)))
-
+        # st.write("Merged", sorted(list(df_merged.columns)))
         # Create Dividend Yield column with precedence:
         # 1. Forward Yield from Excel
         # 2. Trailing Yield from Excel
@@ -66,12 +77,27 @@ def load_data():
         df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['Trailing Yield']
         df_merged.loc[df_merged['Yield'].isna(), 'Yield'] = df_merged['Dividend Yield']
         
+        # Drop other yield columns after creating the main Yield column
+        yield_columns = ['Forward Yield', 'Trailing Yield', 'Dividend Yield']
+        df_merged = df_merged.drop(columns=[col for col in yield_columns if col in df_merged.columns])
+        
+        # Handle sector columns first
+        if 'Sector_xlsx' in df_merged.columns and 'Sector_csv' in df_merged.columns:
+            df_merged['Sector'] = df_merged['Sector_xlsx'].fillna(df_merged['Sector_csv'])
+            df_merged = df_merged.drop(['Sector_xlsx', 'Sector_csv'], axis=1)
+        elif 'Sector_xlsx' in df_merged.columns:
+            df_merged['Sector'] = df_merged['Sector_xlsx']
+            df_merged = df_merged.drop(['Sector_xlsx'], axis=1)
+        elif 'Sector_csv' in df_merged.columns:
+            df_merged['Sector'] = df_merged['Sector_csv']
+            df_merged = df_merged.drop(['Sector_csv'], axis=1)
+
         # Handle other duplicate columns
         duplicate_cols = [col for col in df_merged.columns if col.endswith('_xlsx') or col.endswith('_csv')]
         if duplicate_cols:
             for col in duplicate_cols:
                 base_col = col[:-5] if col.endswith('_xlsx') else col[:-4]  # Remove suffix
-                if col.endswith('_csv'):  # Use the CSV version
+                if col.endswith('_csv') and base_col != 'Sector':  # Skip Sector as it's already handled
                     if f"{base_col}_xlsx" in df_merged.columns:
                         df_merged[base_col] = df_merged[col].fillna(df_merged[f"{base_col}_xlsx"])
                         df_merged.drop([col, f"{base_col}_xlsx"], axis=1, inplace=True)
@@ -97,9 +123,7 @@ def load_data():
             'Moat Rating': 'Unknown',
             'Capital Allocation': 'Unknown',
             'Stock Style Box': 'Unknown',
-            'Morningstar Rating for Stocks': float('nan'),
-            'Forward Yield': float('nan'),
-            'Trailing Yield': float('nan')
+            'Morningstar Rating for Stocks': float('nan')
         }
         
         for col, default_val in default_values.items():
@@ -108,8 +132,7 @@ def load_data():
         
         # Convert numeric columns
         numeric_columns = [
-            'Dividend Yield', 'Forward Yield', 'Trailing Yield',
-            'P/E Ratio', 'Dividend Safety', 'Market Cap (Millions)',
+            'Yield', 'P/E Ratio', 'Dividend Safety', 'Market Cap (Millions)',
             'Beta', 'Payout Ratio', 'Net Debt To Capital', 'Net Debt To EBITDA',
             'Dividend Growth (Latest)', '5 Year Dividend Growth', '20 Year Dividend Growth',
             'Dividend Growth Streak (Years)', 'Uninterrupted Dividend Streak (Years)'
@@ -119,11 +142,15 @@ def load_data():
             if col in df_merged.columns:
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
+        # Standardize sector names again in case any were missed
+        if 'Sector' in df_merged.columns:
+            df_merged['Sector'] = df_merged['Sector'].replace(sector_mapping)
+        
         # Ensure categorical columns are strings
         categorical_columns = ['Sector', 'Sub Sector', 'Payment Schedule', 'Dividend Taxation']
         for col in categorical_columns:
             if col in df_merged.columns:
-                df_merged[col] = df_merged[col].astype(str)
+                df_merged[col] = df_merged[col].fillna('')
         
         return df_merged, None
         
@@ -132,56 +159,56 @@ def load_data():
 
 def create_yield_safety_scatter(df):
     """Create scatter plot of Yield vs Dividend Safety."""
-    if "Dividend Yield" not in df.columns or "Dividend Safety" not in df.columns:
+    if "Yield" not in df.columns or "Dividend Safety" not in df.columns:
         return None
         
     fig = px.scatter(
         df,
         x="Dividend Safety",
-        y="Dividend Yield",
+        y="Yield",
         color="Sector",
-        hover_data=["Ticker", "Name", "Forward Yield", "Trailing Yield", "Payout Ratio"],
+        hover_data=["Ticker", "Name", "Payout Ratio"],
         title="Dividend Yield vs Safety",
         labels={
             "Dividend Safety": "Dividend Safety Score",
-            "Dividend Yield": "Dividend Yield (%)"
+            "Yield": "Dividend Yield (%)"
         }
     )
     return fig
 
 def create_yield_pe_scatter(df):
     """Create scatter plot of Yield vs P/E Ratio."""
-    if "Dividend Yield" not in df.columns or "P/E Ratio" not in df.columns:
+    if "Yield" not in df.columns or "P/E Ratio" not in df.columns:
         return None
         
     fig = px.scatter(
         df,
         x="P/E Ratio",
-        y="Dividend Yield",
+        y="Yield",
         color="Sector",
-        hover_data=["Ticker", "Name", "Forward Yield", "Trailing Yield", "Market Cap (Millions)"],
+        hover_data=["Ticker", "Name", "Market Cap (Millions)"],
         title="Dividend Yield vs P/E Ratio",
         labels={
             "P/E Ratio": "P/E Ratio",
-            "Dividend Yield": "Dividend Yield (%)"
+            "Yield": "Dividend Yield (%)"
         }
     )
     return fig
 
 def create_top_yield_bar(df):
     """Create bar chart of top 10 dividend yields."""
-    if "Dividend Yield" not in df.columns:
+    if "Yield" not in df.columns:
         return None
         
-    top_10 = df.nlargest(10, "Dividend Yield")
+    top_10 = df.nlargest(10, "Yield")
     fig = px.bar(
         top_10,
         x="Ticker",
-        y="Dividend Yield",
+        y="Yield",
         color="Sector",
-        hover_data=["Name", "Forward Yield", "Trailing Yield", "Dividend Safety"],
+        hover_data=["Name", "Dividend Safety"],
         title="Top 10 Stocks by Dividend Yield",
-        labels={"Dividend Yield": "Dividend Yield (%)"}
+        labels={"Yield": "Dividend Yield (%)"}
     )
     return fig
 
@@ -205,17 +232,17 @@ def main():
     st.sidebar.subheader("Numeric Filters")
     
     # Dividend Yield filter (only show if there are stocks with yield data)
-    if "Dividend Yield" in df.columns and df["Dividend Yield"].notna().any():
-        min_yield = float(df["Dividend Yield"].min())
-        max_yield = float(df["Dividend Yield"].max())
+    if "Yield" in df.columns and df["Yield"].notna().any():
+        min_yield = float(df["Yield"].min())
+        max_yield = float(df["Yield"].max())
         selected_min, selected_max = st.sidebar.slider(
             "Dividend Yield Range (%)",
             min_yield, max_yield,
             (min_yield, max_yield)
         )
         # Only filter stocks that have a yield value
-        yield_mask = df["Dividend Yield"].notna()
-        df = df[~yield_mask | (yield_mask & df["Dividend Yield"].between(selected_min, selected_max))]
+        yield_mask = df["Yield"].notna()
+        df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
     
     # P/E Ratio filter (only show if there are stocks with P/E data)
     if "P/E Ratio" in df.columns and df["P/E Ratio"].notna().any():
@@ -247,21 +274,21 @@ def main():
     
     # Sector filter
     if "Sector" in df.columns:
-        sector_options = ["All"] + sorted([x for x in df["Sector"].unique() if x != "nan"])
+        sector_options = ["All"] + sorted([x for x in df["Sector"].unique() if x not in ["", "Unknown"]])
         selected_sector = st.sidebar.selectbox("Sector", sector_options)
         if selected_sector != "All":
             df = df[df["Sector"] == selected_sector]
     
     # Sub Sector filter
     if "Sub Sector" in df.columns:
-        subsector_options = ["All"] + sorted([x for x in df["Sub Sector"].unique() if x != "nan"])
+        subsector_options = ["All"] + sorted([x for x in df["Sub Sector"].unique() if x not in ["", "Unknown"]])
         selected_subsector = st.sidebar.selectbox("Sub Sector", subsector_options)
         if selected_subsector != "All":
             df = df[df["Sub Sector"] == selected_subsector]
     
     # Payment Schedule filter
     if "Payment Schedule" in df.columns:
-        schedule_options = ["All"] + sorted([x for x in df["Payment Schedule"].unique() if x != "nan"])
+        schedule_options = ["All"] + sorted([x for x in df["Payment Schedule"].unique() if x not in ["", "Unknown"]])
         selected_schedule = st.sidebar.selectbox("Payment Schedule", schedule_options)
         if selected_schedule != "All":
             df = df[df["Payment Schedule"] == selected_schedule]
@@ -277,8 +304,8 @@ def main():
         st.header("Stock Data Table")
     
     # Reorder columns to show most important first
-    important_cols = ['Ticker', 'Name', 'Sector', 'Sub Sector', 'Dividend Yield', 
-                     'Forward Yield', 'Trailing Yield', 'P/E Ratio', 'Dividend Safety', 
+    important_cols = ['Ticker', 'Name', 'Sector', 'Sub Sector', 'Yield', 
+                     'P/E Ratio', 'Dividend Safety', 
                      'Market Cap (Millions)', 'Payout Ratio', 'Dividend Growth Streak (Years)',
                      'Payment Schedule', 'Dividend Taxation']
     cols = [col for col in important_cols if col in df.columns]
