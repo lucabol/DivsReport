@@ -142,6 +142,10 @@ def load_data():
             if col in df_merged.columns:
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
+        # Round Yield to two decimal places
+        if 'Yield' in df_merged.columns:
+            df_merged['Yield'] = df_merged['Yield'].round(2)
+        
         # Standardize sector names again in case any were missed
         if 'Sector' in df_merged.columns:
             df_merged['Sector'] = df_merged['Sector'].replace(sector_mapping)
@@ -233,12 +237,13 @@ def main():
     
     # Dividend Yield filter (only show if there are stocks with yield data)
     if "Yield" in df.columns and df["Yield"].notna().any():
-        min_yield = float(df["Yield"].min())
-        max_yield = float(df["Yield"].max())
+        min_yield = round(float(df["Yield"].min()), 2)
+        max_yield = round(float(df["Yield"].max()), 2)
         selected_min, selected_max = st.sidebar.slider(
             "Dividend Yield Range (%)",
             min_yield, max_yield,
-            (min_yield, max_yield)
+            value=(min_yield, max_yield),
+            step=0.01
         )
         # Only filter stocks that have a yield value
         yield_mask = df["Yield"].notna()
@@ -312,8 +317,12 @@ def main():
     other_cols = [col for col in df.columns if col not in important_cols]
     df = df[cols + other_cols]
     
+    # Replace NaN with empty string for display
+    display_df = df.copy()
+    display_df = display_df.fillna('')
+    
     st.dataframe(
-        df,
+        display_df,
         use_container_width=True,
         hide_index=True,
         height=400
