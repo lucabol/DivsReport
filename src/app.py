@@ -33,6 +33,14 @@ def get_value_transformations():
             'Looks reasonably valued': 'Rea',
             'Could be overvalued': 'Ovr',
             '': ''
+        },
+        'FVU': {
+            'Very High': 'VHi',
+            'High': 'Hig',
+            'Medium': 'Med',
+            'Low': 'Low',
+            'Very Low': 'VLo',
+            '': ''
         }
     }
 
@@ -106,7 +114,7 @@ def load_data():
             'P/E Ratio': 'PE',
             'Capital Allocation': 'CapAll',
             'Morningstar Rating for Stocks': 'MSRate',
-            'Fair Value Uncertainty': 'FVUnc',
+            'Fair Value Uncertainty': 'FVU',
             'Price/Fair Value': 'PFV',
             'Valuation': 'Val',
             'Interest Coverage': 'IntCov'
@@ -210,7 +218,8 @@ def load_data():
             'Style': '',
             'MSRate': float('nan'),
             'IntCov': float('nan'),
-            'PFV': float('nan')
+            'PFV': float('nan'),
+            'FVU': ''
         }
         
         for col, default_val in default_values.items():
@@ -245,7 +254,7 @@ def load_data():
             df_merged['Sector'] = df_merged['Sector'].replace(sector_mapping)
         
         # Ensure categorical columns are strings
-        categorical_columns = ['Sector', 'DivTax']
+        categorical_columns = ['Sector', 'DivTax', 'FVU']
         for col in categorical_columns:
             if col in df_merged.columns:
                 df_merged[col] = df_merged[col].fillna('')
@@ -258,7 +267,7 @@ def load_data():
     except Exception as e:
         return None, str(e)
 
-def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label, hover_value_col, hover_value_label):
+def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label, hover_value_col, hover_value_label, hover_extra_col=None, hover_extra_label=None):
     """Create a scatter plot with moat-based coloring and styling."""
     if "Yield" not in df.columns or x_col not in df.columns:
         return None
@@ -273,6 +282,11 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
         # Add small random jitter to positions to reduce overlap
         jitter_x = np.random.normal(0, jitter_x_scale, len(df_moat))
         jitter_y = np.random.normal(0, 0.1, len(df_moat))
+        
+        # Prepare customdata columns
+        customdata_cols = ['Name', hover_value_col, 'Sector', 'DivSafe']
+        if hover_extra_col:
+            customdata_cols.append(hover_extra_col)
         
         fig.add_trace(go.Scatter(
             x=df_moat[x_col] + jitter_x,
@@ -291,11 +305,12 @@ def create_moat_scatter(df, x_col, x_title, title, jitter_x_scale, hover_x_label
                 f"Moat: {moat}<br>" +
                 "Name: %{customdata[0]}<br>" +
                 f"{hover_value_label}: %{{customdata[1]}}<br>" +
-                "Div Safety: %{customdata[3]}<br>" +
+                "Div Safety: %{customdata[3]:.2f}<br>" +
                 "Sector: %{customdata[2]}<br>" +
+                (f"{hover_extra_label}: %{{customdata[4]}}<br>" if hover_extra_col else "") +
                 "<extra></extra>"
             ),
-            customdata=df_moat[['Name', hover_value_col, 'Sector', 'DivSafe']].values
+            customdata=df_moat[customdata_cols].values
         ))
     
     fig.update_layout(
@@ -332,7 +347,9 @@ def create_yield_pfv_scatter(df):
         jitter_x_scale=0.02,
         hover_x_label="Price/Fair Value",
         hover_value_col="Val",
-        hover_value_label="Valuation"
+        hover_value_label="Valuation",
+        hover_extra_col="FVU",
+        hover_extra_label="Fair Value Uncertainty"
     )
 
 def create_top_yield_bar(df):
@@ -443,7 +460,9 @@ def main():
                      'DebtEBT',
                      'IntCov',
                      'MSRate',
-                     'Val'
+                     'Val',
+                     'PFV',
+                     'FVU'
                      ]
     cols = [col for col in important_cols if col in df.columns]
     other_cols = [col for col in df.columns if col not in important_cols]
