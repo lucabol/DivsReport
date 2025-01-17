@@ -249,19 +249,6 @@ def main():
         yield_mask = df["Yield"].notna()
         df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
     
-    # P/E Ratio filter (only show if there are stocks with P/E data)
-    if "P/E Ratio" in df.columns and df["P/E Ratio"].notna().any():
-        min_pe = float(df["P/E Ratio"].min())
-        max_pe = float(df["P/E Ratio"].max())
-        selected_min_pe, selected_max_pe = st.sidebar.slider(
-            "P/E Ratio Range",
-            min_pe, max_pe,
-            (min_pe, max_pe)
-        )
-        # Only filter stocks that have a P/E value
-        pe_mask = df["P/E Ratio"].notna()
-        df = df[~pe_mask | (pe_mask & df["P/E Ratio"].between(selected_min_pe, selected_max_pe))]
-    
     # Dividend Safety filter (only show if there are stocks with safety data)
     if "Dividend Safety" in df.columns and df["Dividend Safety"].notna().any():
         min_safety = float(df["Dividend Safety"].min())
@@ -284,19 +271,19 @@ def main():
         if selected_sector != "All":
             df = df[df["Sector"] == selected_sector]
     
-    # Sub Sector filter
-    if "Sub Sector" in df.columns:
-        subsector_options = ["All"] + sorted([x for x in df["Sub Sector"].unique() if x not in ["", "Unknown"]])
-        selected_subsector = st.sidebar.selectbox("Sub Sector", subsector_options)
-        if selected_subsector != "All":
-            df = df[df["Sub Sector"] == selected_subsector]
+    # Moat Rating filter
+    if "Moat Rating" in df.columns:
+        moat_options = ["All"] + sorted([x for x in df["Moat Rating"].unique() if x not in ["", "Unknown"]])
+        selected_moat = st.sidebar.selectbox("Moat Rating", moat_options)
+        if selected_moat != "All":
+            df = df[df["Moat Rating"] == selected_moat]
     
-    # Payment Schedule filter
-    if "Payment Schedule" in df.columns:
-        schedule_options = ["All"] + sorted([x for x in df["Payment Schedule"].unique() if x not in ["", "Unknown"]])
-        selected_schedule = st.sidebar.selectbox("Payment Schedule", schedule_options)
-        if selected_schedule != "All":
-            df = df[df["Payment Schedule"] == selected_schedule]
+    # Dividend Taxation filter
+    if "Dividend Taxation" in df.columns:
+        taxation_options = ["All"] + sorted([x for x in df["Dividend Taxation"].unique() if x not in ["", "Unknown"]])
+        selected_taxation = st.sidebar.selectbox("Dividend Taxation", taxation_options)
+        if selected_taxation != "All":
+            df = df[df["Dividend Taxation"] == selected_taxation]
     
     # Display data source information
     if df is not None:
@@ -309,10 +296,15 @@ def main():
         st.header("Stock Data Table")
     
     # Reorder columns to show most important first
-    important_cols = ['Ticker', 'Name', 'Sector', 'Sub Sector', 'Yield', 
-                     'P/E Ratio', 'Dividend Safety', 
-                     'Market Cap (Millions)', 'Payout Ratio', 'Dividend Growth Streak (Years)',
-                     'Payment Schedule', 'Dividend Taxation']
+    important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
+                     'Dividend Safety', 
+                     'Moat Rating',
+                     'Beta', 'Recession Dividend',
+                     'Uninterrupted Dividend Streak (Years)',
+                     'Net Debt To EBITDA',
+                     'Morningstar Rating for Stocks',
+                     'Valuation'
+                     ]
     cols = [col for col in important_cols if col in df.columns]
     other_cols = [col for col in df.columns if col not in important_cols]
     df = df[cols + other_cols]
