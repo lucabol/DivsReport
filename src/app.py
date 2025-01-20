@@ -411,24 +411,20 @@ def main():
         yield_mask = df["Yield"].notna()
         df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
     
-    # Dividend Safety filter (only show if there are stocks with safety data)
-    if "DivSafe" in df.columns and df["DivSafe"].notna().any():
-        min_safety = float(df["DivSafe"].min())
-        max_safety = float(df["DivSafe"].max())
-        selected_min_safety, selected_max_safety = st.sidebar.slider(
-            "Safety Score",
-            min_safety, max_safety,
-            (min_safety, max_safety)
-        )
-        # Only include stocks with safety scores if slider has been moved
-        safety_mask = df["DivSafe"].notna()
-        is_default_position = (selected_min_safety == min_safety and selected_max_safety == max_safety)
-        if is_default_position:
-            # At default position, show all stocks
-            df = df[~safety_mask | (safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety))]
-        else:
-            # When slider moved, only show stocks with safety scores in range
-            df = df[safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety)]
+    # Dividend Safety categorical filter
+    if "DivSafe" in df.columns:
+        safety_options = ["Very Safe (>80)", "Safe (60-80)", "None"]
+        selected_safety = st.sidebar.multiselect("Safety Rating", safety_options)
+        if selected_safety:
+            safety_conditions = []
+            for option in selected_safety:
+                if option == "Very Safe (>80)":
+                    safety_conditions.append(df["DivSafe"] > 80)
+                elif option == "Safe (60-80)":
+                    safety_conditions.append(df["DivSafe"].between(60, 80))
+                elif option == "None":
+                    safety_conditions.append(df["DivSafe"].isna())
+            df = df[pd.concat(safety_conditions, axis=1).any(axis=1)]
     
     st.sidebar.subheader("Categorical Filters")
     
