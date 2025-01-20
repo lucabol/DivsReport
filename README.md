@@ -1,19 +1,28 @@
 # Dividend Investor Data Analysis Tool
 
-An interactive web application for analyzing dividend stock data by merging and visualizing information from Excel and CSV files.
+A Streamlit web application for analyzing dividend stock data by merging and visualizing information from Excel and CSV files.
 
 ## Features
 
-- Automatically loads and merges the latest `.xlsx` and `.csv` files from your Downloads directory
-- Interactive data table with sorting and filtering capabilities
+- Automatically loads and merges the latest `for-divs*.xlsx` and `ForDivs*.csv` files from your Downloads directory
+- Interactive data table with:
+  - Automatic column renaming for clarity
+  - Smart data type conversion and formatting
+  - Standardized sector names
+  - Morningstar ratings displayed as stars
+  - Abbreviated values for better readability
 - Dynamic visualizations:
-  - Dividend Yield vs Safety scatter plot
-  - Dividend Yield vs P/E Ratio scatter plot
+  - Yield vs Safety scatter plot with moat-based coloring
+  - Yield vs Price/Fair Value scatter plot
   - Top 10 stocks by dividend yield bar chart
-- Filtering options:
-  - Dividend yield range
-  - Moat rating selection
-- Export filtered data to CSV
+- Comprehensive filtering options:
+  - Safety Rating (Very Safe, Safe)
+  - Sectors
+  - Economic Moat (Wide, Narrow)
+  - Dividend Taxation
+  - Morningstar Rating
+  - Dividend Yield range
+- Export filtered data to timestamped CSV
 
 ## Installation
 
@@ -33,64 +42,54 @@ streamlit run src/app.py
 
 The application will open in your default web browser.
 
-## Using Sample Data
-
-Sample data files are provided in the `data/` directory:
-- `sample_dividend_data.csv`: Contains dividend yields, P/E ratios, moat ratings, etc.
-- `sample_financial_metrics.xlsx`: Contains market cap, growth rates, and other metrics
-
-To test the application with sample data:
-1. Copy both sample files from the `data/` directory
-2. Paste them into your Downloads folder
-3. Run the application
-
 ## Data File Requirements
 
-Your data files must include:
+The application expects two files in your Downloads directory:
+- An Excel file (*.xlsx) with filename starting with "for-divs"
+- A CSV file (*.csv) with filename starting with "ForDivs"
 
 ### Required Columns
 - Both files must have a "Ticker" column for merging
 
-### Recommended Columns for Full Functionality
-- Dividend Yield
-- P/E Ratio
-- Moat Rating
-- Credit Rating
+### Key Columns Used
+- Dividend Yield (Forward/Trailing)
 - Dividend Safety
-- Market Cap
-- Revenue Growth
-- Payout Ratio
-- Years of Dividend Growth
+- Economic Moat
+- Price/Fair Value
+- Fair Value Uncertainty
+- Morningstar Rating
 - Sector
+- Beta
+- Payout Ratio
+- Debt to EBITDA
+- Interest Coverage
+- Dividend Growth (Latest, 5Y, 20Y)
+- Dividend Streaks (Growth, Uninterrupted)
+- Recession Dividend Performance
+- Dividend Taxation
 
-## Features in Detail
+## Data Processing Features
 
-### 1. Data Loading
-- Automatically detects the most recent `.xlsx` and `.csv` files
-- Validates file structure and required columns
-- Merges datasets using stock tickers as keys
+### Automatic Data Cleaning
+- Standardizes sector names across files
+- Cleans ticker symbols (removes whitespace, converts to uppercase)
+- Rounds numeric values for consistency
+- Converts Morningstar ratings to star symbols
+- Abbreviates categorical values for better display
 
-### 2. Interactive Table
-- Sort any column by clicking headers
-- Filter data using the sidebar controls
-- View all available metrics in a clean, organized format
+### Smart Data Merging
+- Merges Excel and CSV data using ticker symbols as keys
+- Handles duplicate columns intelligently
+- Prioritizes forward yield over trailing yield
+- Standardizes column names for clarity
 
-### 3. Visualizations
-- **Yield vs Safety Scatter Plot**: Helps identify stable, high-yield investments
-- **Yield vs P/E Scatter Plot**: Identifies potentially undervalued high-yield stocks
-- **Top Yield Bar Chart**: Quick view of highest-yielding stocks
+### Error Handling
+- Validates file existence in Downloads directory
+- Checks for required columns
+- Handles missing or invalid data gracefully
+- Provides clear error messages for common issues
 
-### 4. Data Export
-- Export filtered dataset to CSV
+## Export Functionality
+- Exports filtered dataset to CSV
 - Includes timestamp in filename
-- Preserves all applied filters
-
-## Error Handling
-
-The application includes robust error handling for:
-- Missing files in Downloads directory
-- Missing required columns
-- Invalid data formats
-- File access issues
-
-Clear error messages guide users to resolve any issues that arise.
+- Preserves all applied filters and data transformations
