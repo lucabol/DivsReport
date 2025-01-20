@@ -420,9 +420,15 @@ def main():
             min_safety, max_safety,
             (min_safety, max_safety)
         )
-        # Only filter stocks that have a Safety value
+        # Only include stocks with safety scores if slider has been moved
         safety_mask = df["DivSafe"].notna()
-        df = df[~safety_mask | (safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety))]
+        is_default_position = (selected_min_safety == min_safety and selected_max_safety == max_safety)
+        if is_default_position:
+            # At default position, show all stocks
+            df = df[~safety_mask | (safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety))]
+        else:
+            # When slider moved, only show stocks with safety scores in range
+            df = df[safety_mask & df["DivSafe"].between(selected_min_safety, selected_max_safety)]
     
     st.sidebar.subheader("Categorical Filters")
     
