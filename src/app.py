@@ -379,8 +379,8 @@ def create_top_yield_bar(df):
     return fig
 
 def main():
-    st.set_page_config(page_title="Dividend Investor Data Analysis", layout="wide")
-    st.title("Dividend Investor Data Analysis")
+    st.set_page_config(page_title="Screener", layout="wide")
+    st.title("Screener")
     
     # Load data and display source information
     df, error = load_data()
@@ -392,10 +392,7 @@ def main():
         return
         
     # Sidebar filters
-    st.sidebar.header("Filters")
-    
-    # Add filters
-    st.sidebar.subheader("Categorical Filters")
+    st.sidebar.markdown("<h1 style='font-size: 32px;'>Filters</h1>", unsafe_allow_html=True)
     
     # Dividend Safety categorical filter
     if "DivSafe" in df.columns:
@@ -444,9 +441,6 @@ def main():
         if selected_stars:
             df = df[df["MSRate"].isin(selected_stars)]
     
-    # Add numeric filters after categorical ones
-    st.sidebar.subheader("Numeric Filters")
-    
     # Dividend Yield filter (only show if there are stocks with yield data)
     if "Yield" in df.columns and df["Yield"].notna().any():
         min_yield = round(float(df["Yield"].min()), 2)
@@ -467,9 +461,9 @@ def main():
         csv_file = get_latest_file(Path.home() / "Downloads", "*.csv")
         if xlsx_file and csv_file:
             st.caption(f"Data sources: {xlsx_file.name} and {csv_file.name}")
-        st.header(f"Stock Data Table ({len(df)} stocks)")
+        st.header(f"Stocks ({len(df)})")
     else:
-        st.header("Stock Data Table")
+        st.header("Stocks")
     
     # Reorder columns to show most important first
     important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
@@ -500,7 +494,7 @@ def main():
     )
     
     # Display charts in tabs
-    st.header("Analysis Charts")
+    st.header("Charts")
     
     tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields"])
     
