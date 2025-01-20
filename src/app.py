@@ -259,6 +259,15 @@ def load_data():
             if col in df_merged.columns:
                 df_merged[col] = df_merged[col].fillna('')
         
+        # Convert MSRate to stars
+        def number_to_stars(n):
+            if pd.isna(n):
+                return ''
+            return '★' * int(n)
+        
+        if 'MSRate' in df_merged.columns:
+            df_merged['MSRate'] = df_merged['MSRate'].apply(number_to_stars)
+        
         # Apply value transformations
         df_merged = apply_value_transformations(df_merged)
         
@@ -441,6 +450,13 @@ def main():
         selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options)
         if selected_taxations:
             df = df[df["DivTax"].isin(selected_taxations)]
+    
+    # Morningstar Rating filter
+    if "MSRate" in df.columns:
+        star_options = ['★', '★★', '★★★', '★★★★', '★★★★★']
+        selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options)
+        if selected_stars:
+            df = df[df["MSRate"].isin(selected_stars)]
     
     # Display data source information
     if df is not None:
