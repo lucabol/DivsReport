@@ -395,21 +395,7 @@ def main():
     st.sidebar.header("Filters")
     
     # Add filters
-    st.sidebar.subheader("Numeric Filters")
-    
-    # Dividend Yield filter (only show if there are stocks with yield data)
-    if "Yield" in df.columns and df["Yield"].notna().any():
-        min_yield = round(float(df["Yield"].min()), 2)
-        max_yield = round(float(df["Yield"].max()), 2)
-        selected_min, selected_max = st.sidebar.slider(
-            "Yield Range (%)",
-            min_yield, max_yield,
-            value=(min_yield, max_yield),
-            step=0.01
-        )
-        # Only filter stocks that have a yield value
-        yield_mask = df["Yield"].notna()
-        df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
+    st.sidebar.subheader("Categorical Filters")
     
     # Dividend Safety categorical filter
     if "DivSafe" in df.columns:
@@ -425,8 +411,6 @@ def main():
                 elif option == "None":
                     safety_conditions.append(df["DivSafe"].isna())
             df = df[pd.concat(safety_conditions, axis=1).any(axis=1)]
-    
-    st.sidebar.subheader("Categorical Filters")
     
     # Sector filter
     if "Sector" in df.columns:
@@ -459,6 +443,23 @@ def main():
         selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options, default=['★★★★', '★★★★★'])
         if selected_stars:
             df = df[df["MSRate"].isin(selected_stars)]
+    
+    # Add numeric filters after categorical ones
+    st.sidebar.subheader("Numeric Filters")
+    
+    # Dividend Yield filter (only show if there are stocks with yield data)
+    if "Yield" in df.columns and df["Yield"].notna().any():
+        min_yield = round(float(df["Yield"].min()), 2)
+        max_yield = round(float(df["Yield"].max()), 2)
+        selected_min, selected_max = st.sidebar.slider(
+            "Yield Range (%)",
+            min_yield, max_yield,
+            value=(min_yield, max_yield),
+            step=0.01
+        )
+        # Only filter stocks that have a yield value
+        yield_mask = df["Yield"].notna()
+        df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
     
     # Display data source information
     if df is not None:
