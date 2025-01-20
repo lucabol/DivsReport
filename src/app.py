@@ -62,8 +62,8 @@ def load_data():
     downloads_dir = Path.home() / "Downloads"
     
     # Get latest files
-    xlsx_file = get_latest_file(downloads_dir, "*.xlsx")
-    csv_file = get_latest_file(downloads_dir, "*.csv")
+    xlsx_file = get_latest_file(downloads_dir, "for-divs*.xlsx")
+    csv_file = get_latest_file(downloads_dir, "ForDivs*.csv")
     
     if not xlsx_file or not csv_file:
         st.error("Could not find both Excel and CSV files in Downloads directory")
