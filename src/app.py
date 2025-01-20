@@ -419,27 +419,28 @@ def main():
     
     # Sector filter
     if "Sector" in df.columns:
-        sector_options = ["All"] + sorted([x for x in df["Sector"].unique() if x != ""])
-        selected_sector = st.sidebar.selectbox("Sector", sector_options)
-        if selected_sector != "All":
-            df = df[df["Sector"] == selected_sector]
+        sector_options = sorted([x for x in df["Sector"].unique() if x != ""])
+        selected_sectors = st.sidebar.multiselect("Sectors", sector_options)
+        if selected_sectors:
+            df = df[df["Sector"].isin(selected_sectors)]
     
     # Moat Rating filter
     if "Moat" in df.columns:
-        moat_options = ["All"] + sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
-        selected_moat = st.sidebar.selectbox("Moat", moat_options)
-        if selected_moat != "All":
-            if selected_moat == "Unknown":
-                df = df[df["Moat"] == ""]
+        moat_options = sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
+        selected_moats = st.sidebar.multiselect("Moats", moat_options)
+        if selected_moats:
+            if "Unknown" in selected_moats:
+                selected_moats.remove("Unknown")
+                df = df[df["Moat"].isin(selected_moats) | (df["Moat"] == "")]
             else:
-                df = df[df["Moat"] == selected_moat]
+                df = df[df["Moat"].isin(selected_moats)]
     
     # Dividend Taxation filter
     if "DivTax" in df.columns:
-        taxation_options = ["All"] + sorted([x for x in df["DivTax"].unique() if x != ""])
-        selected_taxation = st.sidebar.selectbox("Div Tax", taxation_options)
-        if selected_taxation != "All":
-            df = df[df["DivTax"] == selected_taxation]
+        taxation_options = sorted([x for x in df["DivTax"].unique() if x != ""])
+        selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options)
+        if selected_taxations:
+            df = df[df["DivTax"].isin(selected_taxations)]
     
     # Display data source information
     if df is not None:
