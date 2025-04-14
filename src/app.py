@@ -1,3 +1,14 @@
+# /// script
+# dependencies = [
+# "pandas>=2.0.0",
+# "openpyxl>=3.1.0",
+# "streamlit>=1.25.0",
+# "plotly>=5.15.0",
+# "pytest>=7.4.0",
+# "streamlit",
+# ]
+# ///
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -378,158 +389,165 @@ def create_top_yield_bar(df):
     )
     return fig
 
-def main():
-    st.set_page_config(page_title="Screener", layout="wide")
-    st.title("Screener")
-    
-    # Load data and display source information
-    df, error = load_data()
+import logging
+for name, l in logging.root.manager.loggerDict.items():
+    if "streamlit" in name:
+        l.disabled = True
 
-    if error:
-        st.error(f"Error loading data: {error}")
-        return
-    if df is None:
-        return
-        
-    # Sidebar filters
-    st.sidebar.markdown("<h1 style='font-size: 32px;'>Filters</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="Screener", layout="wide")
+st.title("Screener")
+
+# Load data and display source information
+df, error = load_data()
+
+if error:
+    st.error(f"Error loading data: {error}")
+    exit(1)
+if df is None:
+    exit(1)
     
-    # Dividend Safety categorical filter
-    if "DivSafe" in df.columns:
-        safety_options = ["Very Safe (>80)", "Safe (60-80)", "None"]
-        selected_safety = st.sidebar.multiselect("Safety Rating", safety_options, default=["Very Safe (>80)"])
-        if selected_safety:
-            safety_conditions = []
-            for option in selected_safety:
-                if option == "Very Safe (>80)":
-                    safety_conditions.append(df["DivSafe"] > 80)
-                elif option == "Safe (60-80)":
-                    safety_conditions.append(df["DivSafe"].between(60, 80))
-                elif option == "None":
-                    safety_conditions.append(df["DivSafe"].isna())
-            df = df[pd.concat(safety_conditions, axis=1).any(axis=1)]
-    
-    # Sector filter
-    if "Sector" in df.columns:
-        sector_options = sorted([x for x in df["Sector"].unique() if x != ""])
-        selected_sectors = st.sidebar.multiselect("Sectors", sector_options)
-        if selected_sectors:
-            df = df[df["Sector"].isin(selected_sectors)]
-    
-    # Moat Rating filter
-    if "Moat" in df.columns:
-        moat_options = sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
-        selected_moats = st.sidebar.multiselect("Moats", moat_options, default=["Wid", "Nar"])
-        if selected_moats:
-            if "Unknown" in selected_moats:
-                selected_moats.remove("Unknown")
-                df = df[df["Moat"].isin(selected_moats) | (df["Moat"] == "")]
-            else:
-                df = df[df["Moat"].isin(selected_moats)]
-    
-    # Dividend Taxation filter
-    if "DivTax" in df.columns:
-        taxation_options = sorted([x for x in df["DivTax"].unique() if x != ""])
-        selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options, default=["Qualified"])
-        if selected_taxations:
-            df = df[df["DivTax"].isin(selected_taxations)]
-    
-    # Morningstar Rating filter
-    if "MSRate" in df.columns:
-        star_options = ['★', '★★', '★★★', '★★★★', '★★★★★']
-        selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options, default=['★★★★', '★★★★★'])
-        if selected_stars:
-            df = df[df["MSRate"].isin(selected_stars)]
-    
-    # Dividend Yield filter (only show if there are stocks with yield data)
-    if "Yield" in df.columns and df["Yield"].notna().any():
-        min_yield = round(float(df["Yield"].min()), 2)
-        max_yield = round(float(df["Yield"].max()), 2)
-        selected_min, selected_max = st.sidebar.slider(
-            "Yield Range (%)",
-            min_yield, max_yield,
-            value=(min_yield, max_yield),
-            step=0.01
-        )
-        # Only filter stocks that have a yield value
-        yield_mask = df["Yield"].notna()
-        df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
-    
-    # Display data source information
-    if df is not None:
-        xlsx_file = get_latest_file(Path.home() / "Downloads", "*.xlsx")
-        csv_file = get_latest_file(Path.home() / "Downloads", "*.csv")
-        if xlsx_file and csv_file:
-            st.caption(f"Data sources: {xlsx_file.name} and {csv_file.name}")
-        st.header(f"Stocks ({len(df)})")
-    else:
-        st.header("Stocks")
-    
-    # Reorder columns to show most important first
-    important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
-                     'DivSafe', 
-                     'Moat',
-                     'Beta', 'RecDiv',
-                     'StrUnt',
-                     'DebtEBT',
-                     'IntCov',
-                     'MSRate',
-                     'Val',
-                     'PFV',
-                     'FVU'
-                     ]
-    cols = [col for col in important_cols if col in df.columns]
-    other_cols = [col for col in df.columns if col not in important_cols]
-    df = df[cols + other_cols]
-    
-    # Replace NaN with empty string for display
-    display_df = df.copy()
-    display_df = display_df.fillna('')
-    
-    st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True,
-        height=400
+# Sidebar filters
+st.sidebar.markdown("<h1 style='font-size: 32px;'>Filters</h1>", unsafe_allow_html=True)
+
+# Dividend Safety categorical filter
+if "DivSafe" in df.columns:
+    safety_options = ["Very Safe (>80)", "Safe (60-80)", "None"]
+    selected_safety = st.sidebar.multiselect("Safety Rating", safety_options, default=["Very Safe (>80)"])
+    if selected_safety:
+        safety_conditions = []
+        for option in selected_safety:
+            if option == "Very Safe (>80)":
+                safety_conditions.append(df["DivSafe"] > 80)
+            elif option == "Safe (60-80)":
+                safety_conditions.append(df["DivSafe"].between(60, 80))
+            elif option == "None":
+                safety_conditions.append(df["DivSafe"].isna())
+        df = df[pd.concat(safety_conditions, axis=1).any(axis=1)]
+
+# Sector filter
+if "Sector" in df.columns:
+    sector_options = sorted([x for x in df["Sector"].unique() if x != ""])
+    selected_sectors = st.sidebar.multiselect("Sectors", sector_options)
+    if selected_sectors:
+        df = df[df["Sector"].isin(selected_sectors)]
+
+# Moat Rating filter
+if "Moat" in df.columns:
+    moat_options = sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
+    selected_moats = st.sidebar.multiselect("Moats", moat_options, default=["Wid", "Nar"])
+    if selected_moats:
+        if "Unknown" in selected_moats:
+            selected_moats.remove("Unknown")
+            df = df[df["Moat"].isin(selected_moats) | (df["Moat"] == "")]
+        else:
+            df = df[df["Moat"].isin(selected_moats)]
+
+# Dividend Taxation filter
+if "DivTax" in df.columns:
+    taxation_options = sorted([x for x in df["DivTax"].unique() if x != ""])
+    selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options, default=["Qualified"])
+    if selected_taxations:
+        df = df[df["DivTax"].isin(selected_taxations)]
+
+# Morningstar Rating filter
+if "MSRate" in df.columns:
+    star_options = ['★', '★★', '★★★', '★★★★', '★★★★★']
+    selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options, default=['★★★★', '★★★★★'])
+    if selected_stars:
+        df = df[df["MSRate"].isin(selected_stars)]
+
+# Dividend Yield filter (only show if there are stocks with yield data)
+if "Yield" in df.columns and df["Yield"].notna().any():
+    min_yield = round(float(df["Yield"].min()), 2)
+    max_yield = round(float(df["Yield"].max()), 2)
+    selected_min, selected_max = st.sidebar.slider(
+        "Yield Range (%)",
+        min_yield, max_yield,
+        value=(min_yield, max_yield),
+        step=0.01
     )
-    
-    # Display charts in tabs
-    st.header("Charts")
-    
-    tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields"])
-    
-    with tab1:
-        yield_safety_fig = create_yield_safety_scatter(df)
-        if yield_safety_fig:
-            st.plotly_chart(yield_safety_fig, use_container_width=True)
-        else:
-            st.warning("Missing required columns for Yield vs Safety chart")
-    
-    with tab2:
-        yield_pfv_fig = create_yield_pfv_scatter(df)
-        if yield_pfv_fig:
-            st.plotly_chart(yield_pfv_fig, use_container_width=True)
-        else:
-            st.warning("Missing required columns for Yield vs Price/Fair Value chart")
-    
-    with tab3:
-        top_yield_fig = create_top_yield_bar(df)
-        if top_yield_fig:
-            st.plotly_chart(top_yield_fig, use_container_width=True)
-        else:
-            st.warning("Missing required columns for Top Yields chart")
-    
-    # Export functionality
-    if st.button("Export Filtered Data"):
-        csv = df.to_csv(index=False)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"dividend_analysis_{timestamp}.csv"
-        st.download_button(
-            label="Download CSV",
-            data=csv,
-            file_name=filename,
-            mime="text/csv"
-        )
+    # Only filter stocks that have a yield value
+    yield_mask = df["Yield"].notna()
+    df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
+
+# Display data source information
+if df is not None:
+    xlsx_file = get_latest_file(Path.home() / "Downloads", "*.xlsx")
+    csv_file = get_latest_file(Path.home() / "Downloads", "*.csv")
+    if xlsx_file and csv_file:
+        st.caption(f"Data sources: {xlsx_file.name} and {csv_file.name}")
+    st.header(f"Stocks ({len(df)})")
+else:
+    st.header("Stocks")
+
+# Reorder columns to show most important first
+important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
+                    'DivSafe', 
+                    'Moat',
+                    'Beta', 'RecDiv',
+                    'StrUnt',
+                    'DebtEBT',
+                    'IntCov',
+                    'MSRate',
+                    'Val',
+                    'PFV',
+                    'FVU'
+                    ]
+cols = [col for col in important_cols if col in df.columns]
+other_cols = [col for col in df.columns if col not in important_cols]
+df = df[cols + other_cols]
+
+# Replace NaN with empty string for display
+display_df = df.copy()
+display_df = display_df.fillna('')
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    height=400
+)
+
+# Display charts in tabs
+st.header("Charts")
+
+tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields"])
+
+with tab1:
+    yield_safety_fig = create_yield_safety_scatter(df)
+    if yield_safety_fig:
+        st.plotly_chart(yield_safety_fig, use_container_width=True)
+    else:
+        st.warning("Missing required columns for Yield vs Safety chart")
+
+with tab2:
+    yield_pfv_fig = create_yield_pfv_scatter(df)
+    if yield_pfv_fig:
+        st.plotly_chart(yield_pfv_fig, use_container_width=True)
+    else:
+        st.warning("Missing required columns for Yield vs Price/Fair Value chart")
+
+with tab3:
+    top_yield_fig = create_top_yield_bar(df)
+    if top_yield_fig:
+        st.plotly_chart(top_yield_fig, use_container_width=True)
+    else:
+        st.warning("Missing required columns for Top Yields chart")
+
+# Export functionality
+if st.button("Export Filtered Data"):
+    csv = df.to_csv(index=False)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"dividend_analysis_{timestamp}.csv"
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name=filename,
+        mime="text/csv"
+    )
 
 if __name__ == "__main__":
-    main()
+    if "__streamlitmagic__" not in locals():
+        import streamlit.web.bootstrap
+
+        streamlit.web.bootstrap.run(__file__, False, [], {})

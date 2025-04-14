@@ -24,20 +24,11 @@ A Streamlit web application for analyzing dividend stock data by merging and vis
   - Dividend Yield range
 - Export filtered data to timestamped CSV
 
-## Installation
-
-1. Ensure you have Python 3.8+ installed
-2. Clone this repository
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
 ## Running the Application
 
 From the project directory, run:
 ```bash
-streamlit run src/app.py
+uv run .\src\app.py
 ```
 
 The application will open in your default web browser.
