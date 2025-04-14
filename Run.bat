@@ -1,1 +1,1 @@
-streamlit run src/app.py
+uv run src/app.py
