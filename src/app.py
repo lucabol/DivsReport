@@ -372,6 +372,34 @@ def create_yield_pfv_scatter(df):
         hover_extra_label="Fair Value Uncertainty"
     )
 
+def create_yield_growth_scatter(df):
+    """Create scatter plot of Yield vs Dividend Growth."""
+    # Check if required columns exist
+    if "Grw5Y" not in df.columns:
+        # Fall back to using DivGrw for both x-axis and hover data if Grw5Y is not available
+        hover_value_col = "DivGrw"
+        hover_value_label = "Dividend Growth"
+    else:
+        hover_value_col = "Grw5Y"
+        hover_value_label = "5Y Dividend Growth"
+        
+    # Check if StrDiv exists
+    hover_extra_col = "StrDiv" if "StrDiv" in df.columns else None
+    hover_extra_label = "Dividend Streak (Years)" if hover_extra_col else None
+    
+    return create_moat_scatter(
+        df=df,
+        x_col="DivGrw", 
+        x_title="Dividend Growth (%)",
+        title="Yield vs Dividend Growth",
+        jitter_x_scale=0.1,
+        hover_x_label="Dividend Growth (%)",
+        hover_value_col=hover_value_col,
+        hover_value_label=hover_value_label,
+        hover_extra_col=hover_extra_col,
+        hover_extra_label=hover_extra_label
+    )
+
 def create_top_yield_bar(df):
     """Create bar chart of top yields."""
     if "Yield" not in df.columns:
@@ -511,7 +539,7 @@ st.dataframe(
 # Display charts in tabs
 st.header("Charts")
 
-tab1, tab2, tab3 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields"])
+tab1, tab2, tab3, tab4 = st.tabs(["Yield vs Safety", "Yield vs Price/Fair Value", "Top Yields", "Yield vs Growth"])
 
 with tab1:
     yield_safety_fig = create_yield_safety_scatter(df)
@@ -533,6 +561,13 @@ with tab3:
         st.plotly_chart(top_yield_fig, use_container_width=True)
     else:
         st.warning("Missing required columns for Top Yields chart")
+
+with tab4:
+    yield_growth_fig = create_yield_growth_scatter(df)
+    if yield_growth_fig:
+        st.plotly_chart(yield_growth_fig, use_container_width=True)
+    else:
+        st.warning("Missing required columns for Yield vs Dividend Growth chart")
 
 # Export functionality
 if st.button("Export Filtered Data"):
