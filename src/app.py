@@ -544,11 +544,40 @@ for col in decimal_format_cols:
 # Fill NaN with empty string for all other columns
 display_df = display_df.fillna('')
 
+# Define column configuration for right alignment of numeric columns
+# Use NumberColumn for proper right alignment, but we need to convert back to numeric
+numeric_columns_for_alignment = ['Yield', 'DivSafe', 'Beta', 'Payout',
+                                'DebtEBT', 'DivGrw', 'DivGrw5', 'DivGrw10',
+                                'StrDiv', 'StrUnt', 'IntCov', 'PFV']
+
+column_config = {}
+for col in numeric_columns_for_alignment:
+    if col in display_df.columns:
+        if col in ['Yield', 'Beta', 'Payout', 'DebtEBT', 'DivGrw', 'DivGrw5', 'DivGrw10', 'IntCov', 'PFV']:
+            column_config[col] = st.column_config.NumberColumn(
+                col,
+                help=f"{col} values",
+                format="%.2f"
+            )
+        else:  # DivSafe, StrDiv, StrUnt - display as whole numbers
+            column_config[col] = st.column_config.NumberColumn(
+                col,
+                help=f"{col} values",
+                format="%.0f"
+            )
+
+# Convert formatted string columns back to numeric for proper NumberColumn display
+for col in numeric_columns_for_alignment:
+    if col in display_df.columns:
+        # Convert back to numeric, replacing empty strings with NaN
+        display_df[col] = pd.to_numeric(display_df[col].replace('', pd.NA), errors='coerce')
+
 st.dataframe(
     display_df,
     use_container_width=True,
     hide_index=True,
-    height=400
+    height=400,
+    column_config=column_config
 )
 
 # Display charts in tabs
