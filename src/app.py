@@ -108,8 +108,8 @@ def load_data():
             '% Above 5 Year Average Dividend Yield': 'Yld5Dif',
             '5 Year Average P/E Ratio': 'PEAvg5',
             'Dividend Growth (Latest)': 'DivGrw',
-            '5 Year Dividend Growth': 'Grw5Y',
-            '20 Year Dividend Growth': 'Grw20Y',
+            '5-Year Dividend Growth': 'DivGrw5',
+            '10-Year Dividend Growth': 'DivGrw10',
             'Dividend Growth Streak (Years)': 'StrDiv',
             'Uninterrupted Dividend Streak (Years)': 'StrUnt',
             'Payment Frequency': 'PayFrq',
@@ -241,7 +241,7 @@ def load_data():
         numeric_columns = [
             'Yield', 'DivSafe',
             'Beta', 'Payout', 'DebtEBT',
-            'DivGrw', 'Grw5Y', 'Grw20Y',
+            'DivGrw', 'DivGrw5', 'DivGrw10',
             'StrDiv', 'StrUnt', 'IntCov',
             'PFV'
         ]
@@ -251,9 +251,9 @@ def load_data():
                 df_merged[col] = pd.to_numeric(df_merged[col], errors='coerce')
         
         # Round numeric fields to two decimal places
-        numeric_fields_to_round = ['Yield', 'DivSafe', 'Beta', 'Payout', 
-                                 'DebtEBT', 'DivGrw', 
-                                 'Grw5Y', 'Grw20Y', 'IntCov',
+        numeric_fields_to_round = ['Yield', 'DivSafe', 'Beta', 'Payout',
+                                 'DebtEBT', 'DivGrw', 'DivGrw5', 'DivGrw10',
+                                 'StrDiv', 'StrUnt', 'IntCov',
                                  'PFV']
         
         for col in numeric_fields_to_round:
@@ -512,17 +512,18 @@ else:
 important_cols = ['Ticker', 'Name', 'Sector', 'Yield', 
                     'DivSafe', 
                     'Moat',
-                    'Beta', 'RecDiv',
+                    'Beta',
                     'StrUnt',
-                    'DebtEBT',
-                    'IntCov',
+                    'StrDiv',
                     'MSRate',
                     'Val',
                     'PFV',
                     'FVU',
                     'DivGrw',
-                    '5-Year Dividend Growth',
-                    '10-Year Dividend Growth'
+                    'DivGrw5',
+                    'DivGrw10',
+                    'RecDiv',
+                    'IntCov',
                     ]
 cols = [col for col in important_cols if col in df.columns]
 other_cols = [col for col in df.columns if col not in important_cols]
