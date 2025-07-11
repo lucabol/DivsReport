@@ -519,7 +519,10 @@ important_cols = ['Ticker', 'Name', 'Sector', 'Yield',
                     'MSRate',
                     'Val',
                     'PFV',
-                    'FVU'
+                    'FVU',
+                    'DivGrw',
+                    '5-Year Dividend Growth',
+                    '10-Year Dividend Growth'
                     ]
 cols = [col for col in important_cols if col in df.columns]
 other_cols = [col for col in df.columns if col not in important_cols]
