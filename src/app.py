@@ -528,8 +528,20 @@ cols = [col for col in important_cols if col in df.columns]
 other_cols = [col for col in df.columns if col not in important_cols]
 df = df[cols + other_cols]
 
-# Replace NaN with empty string for display
+# Format display DataFrame to show numeric values with appropriate decimal places
 display_df = df.copy()
+
+# Only format these specific columns to always show 2 decimal places
+decimal_format_cols = ['Yield', 'Beta', 'Payout',
+                      'DebtEBT', 'DivGrw', 'DivGrw5', 'DivGrw10',
+                      'IntCov', 'PFV']
+
+for col in decimal_format_cols:
+    if col in display_df.columns:
+        # Format these columns to show 2 decimal places, handle NaN values
+        display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+
+# Fill NaN with empty string for all other columns
 display_df = display_df.fillna('')
 
 st.dataframe(
