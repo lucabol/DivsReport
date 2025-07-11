@@ -137,10 +137,9 @@ def load_data():
         
         # Convert numeric columns in Excel file
         numeric_columns = [
-            'DivSafe',
             'Beta', 'Payout', 'DebtEBT',
-            'DivGrw', 'Grw5Y', 'Grw20Y',
-            'StrDiv', 'StrUnt', 'YldFwd', 'YldTrl',
+            'DivGrw', 'DivGrw5', 'DivGrw10',
+            'YldFwd', 'YldTrl',
             'IntCov'
         ]
         
@@ -218,8 +217,8 @@ def load_data():
             'Payout': float('nan'),
             'DebtEBT': float('nan'),
             'DivGrw': float('nan'),
-            'Grw5Y': float('nan'),
-            'Grw20Y': float('nan'),
+            'DivGrw5': float('nan'),
+            'DivGrw10': float('nan'),
             'StrDiv': float('nan'),
             'StrUnt': float('nan'),
             'Sector': '',
