@@ -461,7 +461,8 @@ if "Sector" in df.columns:
 # Moat Rating filter
 if "Moat" in df.columns:
     moat_options = sorted([x for x in df["Moat"].unique() if x != ""]) + ["Unknown"]
-    selected_moats = st.sidebar.multiselect("Moats", moat_options, default=["Wid", "Nar"])
+    default_moats = [m for m in ["Wid", "Nar"] if m in moat_options]
+    selected_moats = st.sidebar.multiselect("Moats", moat_options, default=default_moats)
     if selected_moats:
         if "Unknown" in selected_moats:
             selected_moats.remove("Unknown")
@@ -487,12 +488,16 @@ if "MSRate" in df.columns:
 if "Yield" in df.columns and df["Yield"].notna().any():
     min_yield = round(float(df["Yield"].min()), 2)
     max_yield = round(float(df["Yield"].max()), 2)
-    selected_min, selected_max = st.sidebar.slider(
-        "Yield Range (%)",
-        min_yield, max_yield,
-        value=(min_yield, max_yield),
-        step=0.01
-    )
+    if min_yield < max_yield:
+        selected_min, selected_max = st.sidebar.slider(
+            "Yield Range (%)",
+            min_yield, max_yield,
+            value=(min_yield, max_yield),
+            step=0.01
+        )
+    else:
+        st.sidebar.text(f"Yield: {min_yield}%")
+        selected_min, selected_max = min_yield, max_yield
     # Only filter stocks that have a yield value
     yield_mask = df["Yield"].notna()
     df = df[~yield_mask | (yield_mask & df["Yield"].between(selected_min, selected_max))]
