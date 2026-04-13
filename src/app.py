@@ -439,7 +439,8 @@ st.sidebar.markdown("<h1 style='font-size: 32px;'>Filters</h1>", unsafe_allow_ht
 # Dividend Safety categorical filter
 if "DivSafe" in df.columns:
     safety_options = ["Very Safe (>80)", "Safe (60-80)", "None"]
-    selected_safety = st.sidebar.multiselect("Safety Rating", safety_options, default=["Very Safe (>80)"])
+    default_safety = [s for s in ["Very Safe (>80)"] if s in safety_options]
+    selected_safety = st.sidebar.multiselect("Safety Rating", safety_options, default=default_safety)
     if selected_safety:
         safety_conditions = []
         for option in selected_safety:
@@ -473,14 +474,16 @@ if "Moat" in df.columns:
 # Dividend Taxation filter
 if "DivTax" in df.columns:
     taxation_options = sorted([x for x in df["DivTax"].unique() if x != ""])
-    selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options, default=["Qualified"])
+    default_taxations = [t for t in ["Qualified"] if t in taxation_options]
+    selected_taxations = st.sidebar.multiselect("Div Taxes", taxation_options, default=default_taxations)
     if selected_taxations:
         df = df[df["DivTax"].isin(selected_taxations)]
 
 # Morningstar Rating filter
 if "MSRate" in df.columns:
     star_options = ['★', '★★', '★★★', '★★★★', '★★★★★']
-    selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options, default=['★★★★', '★★★★★'])
+    default_stars = [s for s in ['★★★★', '★★★★★'] if s in star_options]
+    selected_stars = st.sidebar.multiselect("Morningstar Rating", star_options, default=default_stars)
     if selected_stars:
         df = df[df["MSRate"].isin(selected_stars)]
 
