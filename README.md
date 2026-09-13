@@ -28,10 +28,16 @@ A Streamlit web application for analyzing dividend stock data by merging and vis
 
 From the project directory, run:
 ```bash
-uv run .\src\app.py
+.\Run.bat
 ```
 
 The application will open in your default web browser.
+
+`Run.bat` uses Windows system certificates and reuses an existing
+`PIP_INDEX_URL` or `pip` `global.index-url` as uv's default package index.
+This allows installations through an organization-approved Python package
+mirror without storing its URL or credentials in the repository. An explicit
+`UV_DEFAULT_INDEX` setting takes precedence.
 
 ## Data File Requirements
 
