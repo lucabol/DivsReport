@@ -4,8 +4,6 @@
 # "openpyxl>=3.1.0",
 # "streamlit>=1.25.0",
 # "plotly>=5.15.0",
-# "pytest>=7.4.0",
-# "streamlit",
 # ]
 # ///
 
